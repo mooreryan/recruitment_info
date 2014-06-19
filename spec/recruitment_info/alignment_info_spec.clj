@@ -104,11 +104,15 @@
     (should= {:seq2 2}
              (count-proper-fragments-per-ref reads2))))
 
-(def count-info {:seq1 1000, :seq2 1000})
+(describe "avg-mapped-read-cov"
+  (with sam-reader (make-sam-reader (make-sam-reader-factory) 
+                                    sorted-bam bam-index))
+  (with read-info (get-all-align-info @sam-reader))
+  (with ref-lengths {:seq2 5000})
 
-#_(describe "avg-cov"
   (it "returns average coverage for a reference"
-    ))
+    (should= {:seq2 7/50}
+            (avg-mapped-read-cov @read-info @ref-lengths))))
 
 ;; (describe "get-reads"
 ;;   (with sam-reader (make-sam-reader (make-sam-reader-factory) sorted-bam bam-index))

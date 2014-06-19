@@ -82,6 +82,27 @@
               (recur (rest read-info) counts)))
       counts)))
 
+(defn avg-mapped-read-cov [read-info-maps count-info-map]
+  (loop [read-info-maps read-info-maps
+         avg-covs {}]
+    (if-not (empty? (first read-info-maps))
+      (let [read (first read-info-maps)
+            ref (keyword (:ref read))]
+        (cond (and (contains? avg-covs ref)
+                   (:mapped read)) 
+              (recur (rest read-info-maps)
+                     (assoc avg-covs ref (+ (:len read)
+                                            (ref avg-covs))))
+              (:mapped read)
+              (recur (rest read-info-maps)
+                     (assoc avg-covs ref (:len read)))))
+      (into {} 
+            (for [entry avg-covs] 
+              (vector (first entry) 
+                      (/ (last entry)
+                         ((first entry)
+                          count-info-map))))))))
+
 (defn count-proper-fragments-per-ref
   "This makes some assumptions about how the mate flags work. It
   assumes that if the proper-pair flag is true, then both the first
