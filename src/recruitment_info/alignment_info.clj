@@ -15,8 +15,16 @@
          (.index (SamInputResource/of (io/file sorted-bam))
                  (io/file bam-index))))
 
-(defn header-info [sam-reader]
-  (.getHeader sam-reader))
+(defn get-reference-lengths 
+  "From the sam-reader, return a map with keys and values being
+  references and lengths respectively."
+  [sam-reader]
+  (let [sam-file-header (.getFileHeader sam-reader)
+        sam-sequence-dictionary (.getSequenceDictionary sam-file-header)
+        sequences (.getSequences sam-sequence-dictionary)]
+    (zipmap
+     (map #(keyword (.getSequenceName %)) sequences)
+     (map #(.getSequenceLength %) sequences))))
 
 (defn get-length [start end]
   (inc (- end start)))

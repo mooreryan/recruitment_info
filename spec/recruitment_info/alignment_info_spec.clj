@@ -44,6 +44,13 @@
     (should= (format "SAMFileHeader{%s}" correct-header)
              (str (.getFileHeader @sam-reader)))))
 
+(describe "get-reference-lengths"
+  (with sam-reader (make-sam-reader (make-sam-reader-factory) 
+                                    sorted-bam bam-index))
+  (it "gets lengths for all the references"
+    (should= {:seq1 5000 :seq2 5000}
+             (get-reference-lengths @sam-reader))))
+
 (describe "get-all-align-info"
   (with sam-reader (make-sam-reader (make-sam-reader-factory) 
                                     sorted-bam bam-index))
