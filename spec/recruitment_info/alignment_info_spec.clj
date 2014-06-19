@@ -20,7 +20,8 @@
    :proper-pair nil
    :first nil
    :second nil
-   :mate-ref-name nil})
+   :mate-ref-name nil
+   :inferred-insert-size nil})
 (def last-read 
   {:ref "seq2" 
    :read "read14" 
@@ -33,7 +34,8 @@
    :proper-pair nil
    :first nil
    :second nil
-   :mate-ref-name nil})
+   :mate-ref-name nil
+   :inferred-insert-size nil})
 
 (describe "make-sam-reader"
   (with sam-reader (make-sam-reader (make-sam-reader-factory) 
@@ -113,6 +115,32 @@
   (it "returns average coverage for a reference"
     (should= {:seq2 7/50}
             (avg-mapped-read-cov @read-info @ref-lengths))))
+
+(describe "avg-proper-fragment-cov"
+  (with reads (seq [{:ref "seq2" :read "read1" :start 100 :end 199 
+                     :len 100 :mapped true :read-paired true
+                     :proper-pair true :first true :second false
+                     :mate-mapped true :mate-ref-name "seq2"
+                     :inferred-insert-size 500}
+                    {:ref "seq2" :read "read2" :start 499 :end 598 
+                     :len 100 :mapped true :read-paired true
+                     :proper-pair true :first false :second true
+                     :mate-mapped true :mate-ref-name "seq2"
+                     :inferred-insert-size 500}
+                    {:ref "seq2" :read "read3" :start 800 :end 899 
+                     :len 100 :mapped true :read-paired true
+                     :proper-pair false :first true :second false
+                     :mate-mapped false :mate-ref-name "seq2"
+                     :inferred-insert-size nil}
+                    {:ref "seq2" :read "read4" :start 1200 :end 1299 
+                     :len 100 :mapped true :read-paired true
+                     :proper-pair false :first false :second true
+                     :mate-mapped false :mate-ref-name "seq2"
+                     :inferred-insert-size nil}]))
+  (with ref-lengths {:seq2 5000})
+  (it "returns mean cov for references based on proper pairs"
+    (should= {:seq2 1/10}
+             (avg-proper-fragment-cov @reads @ref-lengths))))
 
 ;; (describe "get-reads"
 ;;   (with sam-reader (make-sam-reader (make-sam-reader-factory) sorted-bam bam-index))

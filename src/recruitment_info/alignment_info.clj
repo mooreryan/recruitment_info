@@ -34,7 +34,8 @@
   [bam-record]
   (let [start (.getAlignmentStart bam-record)
         end (.getAlignmentEnd bam-record)
-        paired (.getReadPairedFlag bam-record)]
+        paired (.getReadPairedFlag bam-record)
+        proper-pair (if paired (.getProperPairFlag bam-record))]
     (hash-map :ref (.getReferenceName bam-record)
               :read (.getReadName bam-record)
               :start start
@@ -42,13 +43,17 @@
               :len (get-length start end)
               :mapped (not (.getReadUnmappedFlag bam-record))
               :read-paired paired
-              :proper-pair (if paired (.getProperPairFlag bam-record))
+              :proper-pair proper-pair
               :first (if paired (.getFirstOfPairFlag bam-record))
               :second (if paired (.getSecondOfPairFlag bam-record))
               :mate-mapped (if paired 
                              (not (.getMateUnmappedFlag bam-record)))
               :mate-ref-name (if paired 
-                               (.getMateReferenceName bam-record)))))
+                               (.getMateReferenceName bam-record))
+              :inferred-insert-size ; might be zero
+              ;; should keep things from being negative or zero
+              (if proper-pair
+                (.getInferredInsertSize bam-record)))))
 
 (defn get-all-align-info
   "Returns a seq of maps containing info for all sequences."
@@ -82,7 +87,20 @@
               (recur (rest read-info) counts)))
       counts)))
 
-(defn avg-mapped-read-cov [read-info-maps count-info-map]
+(defn avg-cov [avg-covs count-info-map]
+  (into {} 
+        (for [entry avg-covs] 
+          (vector (first entry) 
+                  (/ (last entry)
+                     ((first entry)
+                      count-info-map))))))
+
+(defn avg-mapped-read-cov 
+  "Does a naive calculation of mean coverage. Takes literally every
+  read that is mapped, regardless of paired info and sums the total
+  bases covered divided by the length of the reference for each
+  reference."  
+  [read-info-maps ref-lengths]
   (loop [read-info-maps read-info-maps
          avg-covs {}]
     (if-not (empty? (first read-info-maps))
@@ -95,13 +113,32 @@
                                             (ref avg-covs))))
               (:mapped read)
               (recur (rest read-info-maps)
-                     (assoc avg-covs ref (:len read)))))
-      (into {} 
-            (for [entry avg-covs] 
-              (vector (first entry) 
-                      (/ (last entry)
-                         ((first entry)
-                          count-info-map))))))))
+                     (assoc avg-covs ref (:len read)))
+              :else
+              (recur (rest read-info-maps)
+                     avg-covs)))
+      (avg-cov avg-covs ref-lengths))))
+
+(defn avg-proper-fragment-cov [read-info-maps ref-lengths]
+  (loop [read-info-maps read-info-maps
+         avg-covs {}]
+    (if-not (empty? (first read-info-maps))
+      (let [read (first read-info-maps)
+            ref (keyword (:ref read))]
+        (cond (and (contains? avg-covs ref)
+                   (:inferred-insert-size read)
+                   (:first read))
+              (recur (rest read-info-maps)
+                     (assoc avg-covs ref (+ (:inferred-insert-size read)
+                                            (ref avg-covs))))
+              (and (:inferred-insert-size read)
+                   (:first read))
+              (recur (rest read-info-maps)
+                     (assoc avg-covs ref (:inferred-insert-size read)))
+              :else
+              (recur (rest read-info-maps)
+                     avg-covs)))
+      (avg-cov avg-covs ref-lengths))))
 
 (defn count-proper-fragments-per-ref
   "This makes some assumptions about how the mate flags work. It
