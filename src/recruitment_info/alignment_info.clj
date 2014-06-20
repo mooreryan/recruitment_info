@@ -171,22 +171,32 @@
                      avg-covs)))
       (avg-cov avg-covs ref-lengths))))
 
+(defn to-num [r]
+  (cond 
+   (= clojure.lang.Ratio (class r)) (double r)
+   (= java.lang.Long (class r)) r
+   (nil? r) 0))
+
 (defn print-cov-info [read-info-maps ref-lengths]
-  (let [all-reads (count-mapped-reads-per-ref read-info-maps)
+  (let [references (keys ref-lengths)
+        all-reads (count-mapped-reads-per-ref read-info-maps)
         all-read-cov (avg-mapped-read-cov read-info-maps ref-lengths)
         proper-frags (count-proper-fragments-per-ref read-info-maps)
         proper-frag-cov (avg-proper-fragment-cov read-info-maps 
                                                  ref-lengths)]
-    (for [entry all-reads :let [k (first entry) v (last entry)]]
+    (for [ref references]
       (clojure.string/join "\t" 
-                           (vector (name k) v 
-                                   (double (k all-read-cov)) 
-                                   (k proper-frags) 
-                                   (double (k proper-frag-cov)))))))
+                           (vector (name ref)
+                                   (to-num (ref all-reads))
+                                   (to-num (ref all-read-cov))
+                                   (to-num (ref proper-frags))
+                                   (to-num (ref proper-frag-cov)))))))
 
-(defn alignment-info [sorted-bam bam-index]
-  (let [sam-reader (make-sam-reader (make-sam-reader-factory
-                                     sorted-bam bam-index))
+(defn alignment-info 
+  "Worker for this namespace."
+  [sorted-bam bam-index]
+  (let [sam-reader (make-sam-reader (make-sam-reader-factory)
+                                    sorted-bam bam-index)
         read-info-maps (get-all-align-info sam-reader)
         ref-lengths (get-reference-lengths sam-reader)]
     (print-cov-info read-info-maps ref-lengths)))
