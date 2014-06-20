@@ -138,7 +138,7 @@
                   :len 100 :mapped true :read-paired true
                   :proper-pair true :first true :second false
                   :mate-mapped true :mate-ref-name "seq2"
-                  :inferred-insert-size 500}
+                  :inferred-insert-size -500}
                  {:ref "seq2" :read "read2" :start 499 :end 598 
                   :len 100 :mapped true :read-paired true
                   :proper-pair true :first false :second true

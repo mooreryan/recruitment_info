@@ -178,12 +178,14 @@
                    (:inferred-insert-size read)
                    (:first read))
               (recur (rest read-info-maps)
-                     (assoc avg-covs ref (+ (:inferred-insert-size read)
-                                            (ref avg-covs))))
+                     (assoc avg-covs ref 
+                            (+ (Math/abs (:inferred-insert-size read))
+                               (ref avg-covs))))
               (and (:inferred-insert-size read)
                    (:first read))
               (recur (rest read-info-maps)
-                     (assoc avg-covs ref (:inferred-insert-size read)))
+                     (assoc avg-covs ref 
+                            (Math/abs (:inferred-insert-size read))))
               :else
               (recur (rest read-info-maps)
                      avg-covs)))
