@@ -24,7 +24,8 @@
    \newline 
    ["" ""
     "SYNOPSIS:"
-    "Gives recruitment info for a bam."
+    (str "Gives recruitment info provided a bam sorted on coordinate"
+         " and an index. Doesn't check if bam is sorted.")
     ""
     (str "USAGE: \njava -jar recruitment_info-x.y.z.jar "
          "-b <bam-file> -i <index-file>")
