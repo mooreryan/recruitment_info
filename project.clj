@@ -11,4 +11,5 @@
                   {:url ~(str (.toURI (java.io.File. "repo")))}]]
   :profiles {:dev {:dependencies [[speclj "3.0.1"]]}}
   :plugins [[speclj "3.0.1"]]
-  :test-paths ["spec"])
+  :test-paths ["spec"]
+  :main recruitment_info.core)
