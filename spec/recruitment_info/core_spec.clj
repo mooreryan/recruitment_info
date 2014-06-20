@@ -13,5 +13,4 @@
 (describe "-main"
   (context "with proper arguments"
     (it "gets alignment info from a sorted bam and index"
-      (should= '("seq2\t14\t0.14\t0\t0" "seq1\t0\t0\t0\t0")
-               (-main "-b" sorted-bam "-i" bam-index)))))
+      (should-not (-main "-b" sorted-bam "-i" bam-index)))))
