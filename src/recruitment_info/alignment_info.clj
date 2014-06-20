@@ -184,58 +184,9 @@
                                    (k proper-frags) 
                                    (double (k proper-frag-cov)))))))
 
-
-
-
-
-
-;; TODO consider laziness by using filters and lazy-seq around the
-;; iterator-seq instead of set differences
-
-
-
-(defn query-contained-reads [seq start end sam-reader]
-  (.queryContained sam-reader seq start end))
-
-(defn query-overlapping-reads [seq start end sam-reader]
-  (.queryOverlapping sam-reader seq start end))
-
-;; (defn get-reads 
-;;   "Gets reads that are either contained or overlapping the given
-;;   interval depending on whehter query-contained-reads or
-;;   query-overlapping-reads is passed. Closes the iterator."  
-;;   [seq start end sam-reader query-fn]
-;;   (let [iter (query-fn seq start end sam-reader)
-;;         reads (iterator-seq iter)
-;;         read-set (set (map get-record-info reads))]
-;;     (.close iter)
-;;     read-set))
-
-;; (defn bin-reads 
-;;   "Partitions the contained and overlapping reads into islanders and
-;;   bridgers."
-;;   [contained-reads overlapping-reads]
-;;   (hash-map :islanders contained-reads
-;;             :bridgers (clojure.set/difference overlapping-reads contained-reads)))
-
-;; (defn single-orf-alignment-info [orf-map sam-reader]
-;;   (let [get-reads-par (partial get-reads 
-;;                                (:ref orf-map)
-;;                                (:start orf-map)
-;;                                (:end orf-map)
-;;                                sam-reader)
-;;         contained-reads (get-reads-par query-contained-reads)
-;;         overlapping-reads (get-reads-par query-overlapping-reads)]
-;;     (bin-reads contained-reads overlapping-reads)))
-
-;; (defn alignment-info [orf-maps sam-reader]
-;;   (into (hash-map) 
-;;         (map (fn [orf-map]
-;;                (hash-map (keyword (:orf orf-map)) 
-;;                          (single-orf-alignment-info orf-map sam-reader)))
-;;              orf-maps)))
-
-;; (defn alignment-info-for-random-orf-maps [orf-maps sam-reader]
-;;   (map (fn [orf-map]
-;;          (single-orf-alignment-info orf-map sam-reader))
-;;        orf-maps))
+(defn alignment-info [sorted-bam bam-index]
+  (let [sam-reader (make-sam-reader (make-sam-reader-factory
+                                     sorted-bam bam-index))
+        read-info-maps (get-all-align-info sam-reader)
+        ref-lengths (get-reference-lengths sam-reader)]
+    (print-cov-info read-info-maps ref-lengths)))
