@@ -119,27 +119,6 @@
                      avg-covs)))
       (avg-cov avg-covs ref-lengths))))
 
-(defn avg-proper-fragment-cov [read-info-maps ref-lengths]
-  (loop [read-info-maps read-info-maps
-         avg-covs {}]
-    (if-not (empty? (first read-info-maps))
-      (let [read (first read-info-maps)
-            ref (keyword (:ref read))]
-        (cond (and (contains? avg-covs ref)
-                   (:inferred-insert-size read)
-                   (:first read))
-              (recur (rest read-info-maps)
-                     (assoc avg-covs ref (+ (:inferred-insert-size read)
-                                            (ref avg-covs))))
-              (and (:inferred-insert-size read)
-                   (:first read))
-              (recur (rest read-info-maps)
-                     (assoc avg-covs ref (:inferred-insert-size read)))
-              :else
-              (recur (rest read-info-maps)
-                     avg-covs)))
-      (avg-cov avg-covs ref-lengths))))
-
 (defn count-proper-fragments-per-ref
   "This makes some assumptions about how the mate flags work. It
   assumes that if the proper-pair flag is true, then both the first
@@ -171,8 +150,49 @@
               (recur (rest read-info) counts)))
       counts)))
 
+(defn avg-proper-fragment-cov [read-info-maps ref-lengths]
+  (loop [read-info-maps read-info-maps
+         avg-covs {}]
+    (if-not (empty? (first read-info-maps))
+      (let [read (first read-info-maps)
+            ref (keyword (:ref read))]
+        (cond (and (contains? avg-covs ref)
+                   (:inferred-insert-size read)
+                   (:first read))
+              (recur (rest read-info-maps)
+                     (assoc avg-covs ref (+ (:inferred-insert-size read)
+                                            (ref avg-covs))))
+              (and (:inferred-insert-size read)
+                   (:first read))
+              (recur (rest read-info-maps)
+                     (assoc avg-covs ref (:inferred-insert-size read)))
+              :else
+              (recur (rest read-info-maps)
+                     avg-covs)))
+      (avg-cov avg-covs ref-lengths))))
+
+(defn print-cov-info [read-info-maps ref-lengths]
+  (let [all-reads (count-mapped-reads-per-ref read-info-maps)
+        all-read-cov (avg-mapped-read-cov read-info-maps ref-lengths)
+        proper-frags (count-proper-fragments-per-ref read-info-maps)
+        proper-frag-cov (avg-proper-fragment-cov read-info-maps 
+                                                 ref-lengths)]
+    (for [entry all-reads :let [k (first entry) v (last entry)]]
+      (clojure.string/join "\t" 
+                           (vector (name k) v 
+                                   (double (k all-read-cov)) 
+                                   (k proper-frags) 
+                                   (double (k proper-frag-cov)))))))
+
+
+
+
+
+
 ;; TODO consider laziness by using filters and lazy-seq around the
 ;; iterator-seq instead of set differences
+
+
 
 (defn query-contained-reads [seq start end sam-reader]
   (.queryContained sam-reader seq start end))

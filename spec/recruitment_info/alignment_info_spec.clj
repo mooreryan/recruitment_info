@@ -116,17 +116,45 @@
     (should= {:seq2 7/50}
             (avg-mapped-read-cov @read-info @ref-lengths))))
 
+(def reads (seq [{:ref "seq2" :read "read1" :start 100 :end 199 
+                  :len 100 :mapped true :read-paired true
+                  :proper-pair true :first true :second false
+                  :mate-mapped true :mate-ref-name "seq2"
+                  :inferred-insert-size 500}
+                 {:ref "seq2" :read "read2" :start 499 :end 598 
+                  :len 100 :mapped true :read-paired true
+                  :proper-pair true :first false :second true
+                  :mate-mapped true :mate-ref-name "seq2"
+                  :inferred-insert-size 500}
+                 {:ref "seq2" :read "read3" :start 800 :end 899 
+                  :len 100 :mapped true :read-paired true
+                  :proper-pair false :first true :second false
+                  :mate-mapped false :mate-ref-name "seq2"
+                  :inferred-insert-size nil}
+                 {:ref "seq2" :read "read4" :start 1200 :end 1299 
+                  :len 100 :mapped true :read-paired true
+                  :proper-pair false :first false :second true
+                  :mate-mapped false :mate-ref-name "seq2"
+                  :inferred-insert-size nil}]))
+
 (describe "avg-proper-fragment-cov"
+  (with ref-lengths {:seq2 5000})
+  (it "returns mean cov for references based on proper pairs"
+    (should= {:seq2 1/10}
+             (avg-proper-fragment-cov reads @ref-lengths))))
+
+(describe "print-cov-info"
+  (with ref-lengths {:seq2 5000})
   (with reads (seq [{:ref "seq2" :read "read1" :start 100 :end 199 
                      :len 100 :mapped true :read-paired true
                      :proper-pair true :first true :second false
                      :mate-mapped true :mate-ref-name "seq2"
-                     :inferred-insert-size 500}
+                     :inferred-insert-size 1000}
                     {:ref "seq2" :read "read2" :start 499 :end 598 
                      :len 100 :mapped true :read-paired true
                      :proper-pair true :first false :second true
                      :mate-mapped true :mate-ref-name "seq2"
-                     :inferred-insert-size 500}
+                     :inferred-insert-size 1000}
                     {:ref "seq2" :read "read3" :start 800 :end 899 
                      :len 100 :mapped true :read-paired true
                      :proper-pair false :first true :second false
@@ -136,11 +164,20 @@
                      :len 100 :mapped true :read-paired true
                      :proper-pair false :first false :second true
                      :mate-mapped false :mate-ref-name "seq2"
+                     :inferred-insert-size nil}
+                    {:ref "seq2" :read "read4" :start 1200 :end 1299 
+                     :len 100 :mapped true :read-paired true
+                     :proper-pair false :first true :second false
+                     :mate-mapped false :mate-ref-name "seq2"
+                     :inferred-insert-size nil}
+                    {:ref "seq2" :read "read4" :start 1200 :end 1299 
+                     :len 100 :mapped false :read-paired true
+                     :proper-pair false :first false :second true
+                     :mate-mapped false :mate-ref-name "seq2"
                      :inferred-insert-size nil}]))
-  (with ref-lengths {:seq2 5000})
-  (it "returns mean cov for references based on proper pairs"
-    (should= {:seq2 1/10}
-             (avg-proper-fragment-cov @reads @ref-lengths))))
+  (it "prints all the coverage metrics"
+    (should= (seq ["seq2\t5\t0.1\t1\t0.2"])
+             (print-cov-info @reads @ref-lengths))))
 
 ;; (describe "get-reads"
 ;;   (with sam-reader (make-sam-reader (make-sam-reader-factory) sorted-bam bam-index))
