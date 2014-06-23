@@ -2,6 +2,7 @@
 /lib
 /classes
 /checkouts
+/test_files/bowtie2
 pom.xml
 *.jar
 *.class
