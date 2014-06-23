@@ -70,7 +70,8 @@
                                            (usage summary)))
      errors (exit 1 (error-msg errors)))
     ;; run program with options
-    (println (str "#reference\tmapped_reads\tmean_mapped_read_cov\t"
+    (println (str "#reference\tref_len\tmapped_reads\t"
+                  "mean_mapped_read_cov\t"
                   "proper_fragments\tmean_proper_frag_cov"))
     (println
      (clojure.string/join 

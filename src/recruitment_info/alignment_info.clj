@@ -24,7 +24,7 @@
 
 (defn make-sam-reader-factory []
   (.validationStringency (SamReaderFactory/makeDefault)
-                         (ValidationStringency/valueOf "SILENT")))
+                         (ValidationStringency/valueOf "LENIENT")))
 
 (defn make-sam-reader 
   "TODO: Doesn't handle file exceptions"
@@ -195,6 +195,7 @@
   (cond 
    (= clojure.lang.Ratio (class r)) (double r)
    (= java.lang.Long (class r)) r
+   (= java.lang.Integer (class r)) r
    (nil? r) 0))
 
 (defn print-cov-info [read-info-maps ref-lengths]
@@ -204,13 +205,14 @@
         proper-frags (count-proper-fragments-per-ref read-info-maps)
         proper-frag-cov (avg-proper-fragment-cov read-info-maps 
                                                  ref-lengths)]
-    (for [ref references]
+    (for [refn references]
       (clojure.string/join "\t" 
-                           (vector (name ref)
-                                   (to-num (ref all-reads))
-                                   (to-num (ref all-read-cov))
-                                   (to-num (ref proper-frags))
-                                   (to-num (ref proper-frag-cov)))))))
+                           (vector (name refn)
+                                   (to-num (refn ref-lengths))
+                                   (to-num (refn all-reads))
+                                   (to-num (refn all-read-cov))
+                                   (to-num (refn proper-frags))
+                                   (to-num (refn proper-frag-cov)))))))
 
 (defn alignment-info 
   "Worker for this namespace."

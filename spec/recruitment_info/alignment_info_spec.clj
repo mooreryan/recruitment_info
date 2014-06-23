@@ -194,5 +194,5 @@
                      :mate-mapped false :mate-ref-name "seq2"
                      :inferred-insert-size nil}]))
   (it "prints all the coverage metrics"
-    (should= (seq ["seq2\t5\t0.1\t1\t0.2"])
+    (should= (seq ["seq2\t5000\t5\t0.1\t1\t0.2"])
              (print-cov-info @reads @ref-lengths))))
