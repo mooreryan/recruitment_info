@@ -85,7 +85,7 @@
 (def reads (seq [{:ref "seq2" :read "read1" :start 100 :end 200 :len 101
                   :mapped true :read-paired false :proper-pair nil
                   :first nil :second nil :mate-ref-name nil}
-                 {:ref "seq2" :read "read2" :start 100 :end 200 :len 101
+                 {:ref "seq2" :read "read2" :start 150 :end 250 :len 101
                   :mapped true :read-paired false :proper-pair nil
                   :first nil :second nil :mate-ref-name nil}
                  {:ref "seq1" :read "read3" :start 100 :end 200 :len 101
@@ -94,10 +94,18 @@
                  {:ref "seq1" :read "read4" :start 100 :end 200 :len 101
                   :mapped true :read-paired false :proper-pair nil
                   :first nil :second nil :mate-ref-name nil}]))
+
+(describe "cov-vec"
+  (it "takes a read-info-map and returns a cov vector"
+    (should= [1 2 3 4 5]
+              (cov-vec {:start 1 :end 5}))))
+
 (describe "count-mapped-reads-per-ref"
   (it "counts the number of reads mapped to each reference"
     (should= {:seq1 1 :seq2 2}
-             (count-mapped-reads-per-ref reads))))
+             (count-mapped-reads-per-ref reads)))
+  (it "outputs a coverage graph for each reference"
+    (pending "write a test")))
 
 ;; this is how i think things work with the various flags
 (def reads2 (seq [{:ref "seq2" :read "read1" :mapped true

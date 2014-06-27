@@ -37,9 +37,12 @@
   (with outdir (str "/Users/ryanmoore/projects/wommack/recruitment_info/"
                     "test_files/test_output"))
   (with reference "Contig45")
+  (with id "proper_frags_only")
   (it "saves a coverage plot in the given outdir with the reference name"
     (plot-cov [[1 2 3] [2 3 4] [3 4 5] [3 4 5] [10 11 12 13 14]]
               @reference
-              @outdir)
+              @outdir
+              @id)
     (should (.exists 
-             (clojure.java.io/file (format "%s/%s_cov.pdf" @outdir @reference))))))
+             (clojure.java.io/file (format "%s/%s_cov_%s.pdf" 
+                                           @outdir @reference @id))))))

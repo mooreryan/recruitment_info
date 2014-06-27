@@ -26,13 +26,14 @@
 (defn plot-cov
   "cov-vector is a vector like so [[2 3 4] [3 4 5 6] [5 6 7 8
   9]]. outdir will not have trailing '/'"
-  [cov-vector ref-name outdir]
+  [cov-vector ref-name outdir id]
   (let [freqs (sort (frequencies (flatten cov-vector)))
         [x y] (map #(format "c(%s)" %) 
                    [(clojure.string/join ", " (keys freqs)) 
                     (clojure.string/join ", " (vals freqs))])]
-    (r (format (str (format "pdf('%s/%s_cov.pdf', width=8, height=5);" outdir ref-name)
-                    "plot(x=%s, y=%s, main='%s', xlab='Position', ylab='Coverage', "
+    (r (format (str (format "pdf('%s/%s_cov_%s.pdf', width=8, height=5);" 
+                            outdir ref-name id)
+                    "plot(x=%s, y=%s, main='%s %s', xlab='Position', ylab='Coverage', "
                     "type='l');"
                     "invisible(dev.off());") 
-               x y ref-name))))
+               x y ref-name id))))

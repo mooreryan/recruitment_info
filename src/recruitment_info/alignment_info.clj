@@ -17,7 +17,8 @@
 ;; <http://www.gnu.org/licenses/>.
 
 (ns recruitment_info.alignment-info
-  (:require [clojure.java.io :as io])
+  (:require [clojure.java.io :as io]
+            [recruitment_info.plots :as plots])
   (:import (htsjdk.samtools SamReaderFactory
                             SamInputResource
                             ValidationStringency)))
@@ -82,28 +83,42 @@
 (defn inc-counts [reference counts]
   (assoc counts reference (inc (reference counts))))
 
+(defn cov-vec [read-info-map]
+  (range (:start read-info-map) (inc (:end read-info-map))))
+
 (defn count-mapped-reads-per-ref
   "Count the number of mapped reads per reference given a seq of
   read-info maps (ie the output from get-all-align-info)"
   [read-info-maps]
   (loop [read-info read-info-maps
-         counts {}]
+         counts {}
+         info {}]
     (if-not (empty? (first read-info))
       (let [read (:read (first read-info)) 
             reference (keyword (:ref (first read-info)))]
         (cond (and (contains? counts reference) 
                    (:mapped (first read-info)))
               (recur (rest read-info) 
-                     (inc-counts reference counts))
-              (contains? counts reference)
+                     (inc-counts reference counts)
+                     (assoc info reference (conj (reference info) (first read-info))))
+              (contains? counts reference) ;; ref in the map, read not mapped
               (recur (rest read-info) 
-                     counts)
+                     counts 
+                     info)
               (:mapped (first read-info))
               (recur (rest read-info) 
-                     (assoc counts reference 1))
+                     (assoc counts reference 1)
+                     (assoc info reference [(first read-info)]))
               :else
-              (recur (rest read-info) counts)))
-      counts)))
+              (recur (rest read-info) counts info)))
+;      counts
+      (map (fn [[ref info-maps]] 
+             (plots/plot-cov (map cov-vec info-maps)
+                             (name ref)
+                             (str "/Users/ryanmoore/projects/wommack/recruitment_info/"
+                                  "test_files/test_output")
+                             "mapped_reads")) 
+           info))))
 
 (defn avg-cov [avg-covs count-info-map]
   (into {} 
