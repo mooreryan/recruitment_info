@@ -24,7 +24,7 @@
 
 (defn make-sam-reader-factory []
   (.validationStringency (SamReaderFactory/makeDefault)
-                         (ValidationStringency/valueOf "LENIENT")))
+                         (ValidationStringency/valueOf "SILENT")))
 
 (defn make-sam-reader 
   "TODO: Doesn't handle file exceptions"
