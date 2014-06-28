@@ -16,19 +16,19 @@
 ;; along with recruitment_info.  If not, see
 ;; <http://www.gnu.org/licenses/>.
 
-(ns recruitment_info.core-spec
-  (:require [speclj.core :refer :all]
-            [recruitment_info.core :refer :all]))
+;; (ns recruitment_info.core-spec
+;;   (:require [speclj.core :refer :all]
+;;             [recruitment_info.core :refer :all]))
 
-(def base "/Users/ryanmoore/projects/wommack/recruitment_info")
-(def sorted-bam
-  (str base "/test_files/unpaired.sorted.bam"))
-(def bam-index
-  (str base "/test_files/unpaired.sorted.bam.bai"))
+;; (def base "/Users/ryanmoore/projects/wommack/recruitment_info")
+;; (def sorted-bam
+;;   (str base "/test_files/unpaired.sorted.bam"))
+;; (def bam-index
+;;   (str base "/test_files/unpaired.sorted.bam.bai"))
 
 
 
-(describe "-main"
-  (context "with proper arguments"
-    (it "gets alignment info from a sorted bam and index"
-      (should-not (-main "-b" sorted-bam "-i" bam-index)))))
+;; (describe "-main"
+;;   (context "with proper arguments"
+;;     (it "gets alignment info from a sorted bam and index"
+;;       (should-not (-main "-b" sorted-bam "-i" bam-index)))))

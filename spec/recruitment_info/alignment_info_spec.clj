@@ -80,7 +80,10 @@
   (it "returns info about the reads (first matches)"
     (should= first-read (first @read-info)))
   (it "returns info about the reads (last matches)"
-    (should= last-read (last @read-info))))
+    (should= last-read (last @read-info)))
+  (context "with a proper pair"
+    (it "always returns a positive inferred insert size"
+      (pending "it does this, but I need a test"))))
 
 (def reads (seq [{:ref "seq2" :read "read1" :start 100 :end 200 :len 101
                   :mapped true :read-paired false :proper-pair nil
@@ -100,6 +103,11 @@
     (should= [1 2 3 4 5]
               (cov-vec {:start 1 :end 5}))))
 
+(describe "frag-cov-vec"
+  (it "takes a read-info-map and returns the fragment coverage"
+    (should= [1 2 3 4 5]
+             (frag-cov-vec {:start 1 :inferred-insert-size 5}))))
+
 (describe "count-mapped-reads-per-ref"
   (it "counts the number of reads mapped to each reference"
     (should= {:seq1 1 :seq2 2}
@@ -110,7 +118,9 @@
 ;; this is how i think things work with the various flags
 (def reads2 (seq [{:ref "seq2" :read "read1" :mapped true
                    :read-paired true :proper-pair true :first true
-                   :second false :mate-mapped true}
+                   :second false :mate-mapped true
+                   :inferred-insert-size 500
+                   :start 100}
                   {:ref "seq2" :read "read2" :mapped true
                    :read-paired true :proper-pair true :first false
                    :second true :mate-mapped true}
@@ -122,7 +132,9 @@
                    :second true :mate-mapped true}
                   {:ref "seq2" :read "read5" :mapped true
                    :read-paired true :proper-pair true :first true
-                   :second false :mate-mapped true}
+                   :second false :mate-mapped true
+                   :inferred-insert-size 600
+                   :start 400}
                   {:ref "seq2" :read "read6" :mapped true
                    :read-paired true :proper-pair true :first false
                    :second true :mate-mapped true}]))
@@ -130,7 +142,9 @@
 (describe "count-proper-fragments-per-ref"
   (it "counts the number of proper fragments mapped to each ref"
     (should= {:seq2 2}
-             (count-proper-fragments-per-ref reads2))))
+             (count-proper-fragments-per-ref reads2)))
+  (it "outputs a coverage graph for each reference"
+    (pending "write a test")))
 
 (describe "avg-mapped-read-cov"
   (with sam-reader (make-sam-reader (make-sam-reader-factory) 
@@ -146,7 +160,7 @@
                   :len 100 :mapped true :read-paired true
                   :proper-pair true :first true :second false
                   :mate-mapped true :mate-ref-name "seq2"
-                  :inferred-insert-size -500}
+                  :inferred-insert-size 500}
                  {:ref "seq2" :read "read2" :start 499 :end 598 
                   :len 100 :mapped true :read-paired true
                   :proper-pair true :first false :second true

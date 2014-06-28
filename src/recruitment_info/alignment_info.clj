@@ -49,7 +49,8 @@
   (inc (- end start)))
 
 (defn get-record-info 
-  "This works on bam records from the iterator opened on the sam-reader."
+  "This works on bam records from the iterator opened on the
+  sam-reader. Not called on it's own, but in get-all-align-info."
   [bam-record]
   (let [start (.getAlignmentStart bam-record)
         end (.getAlignmentEnd bam-record)
@@ -72,7 +73,7 @@
               :inferred-insert-size ; might be zero
               ;; should keep things from being negative or zero
               (if proper-pair
-                (.getInferredInsertSize bam-record)))))
+                (Math/abs (.getInferredInsertSize bam-record))))))
 
 (defn get-all-align-info
   "Returns a seq of maps containing info for all sequences."
@@ -100,8 +101,10 @@
                    (:mapped (first read-info)))
               (recur (rest read-info) 
                      (inc-counts reference counts)
-                     (assoc info reference (conj (reference info) (first read-info))))
-              (contains? counts reference) ;; ref in the map, read not mapped
+                     (assoc info reference 
+                            (conj (reference info) (first read-info))))
+              ;; ref in the map, read not mapped
+              (contains? counts reference) 
               (recur (rest read-info) 
                      counts 
                      info)
@@ -111,14 +114,69 @@
                      (assoc info reference [(first read-info)]))
               :else
               (recur (rest read-info) counts info)))
-;      counts
-      (map (fn [[ref info-maps]] 
-             (plots/plot-cov (map cov-vec info-maps)
-                             (name ref)
-                             (str "/Users/ryanmoore/projects/wommack/recruitment_info/"
-                                  "test_files/test_output")
-                             "mapped_reads")) 
-           info))))
+      (do
+        (doall 
+         (map 
+          (fn [[ref info-maps]] 
+            (plots/plot-cov 
+             (map cov-vec info-maps)
+             (name ref)
+             (str "/Users/ryanmoore/projects/wommack/recruitment_info/"
+                  "test_files/test_output")
+             "mapped_reads")) 
+          info))
+        counts))))
+
+(defn frag-cov-vec [read-info-map]
+  (range (:start read-info-map) 
+         (+ (:start read-info-map)
+            (:inferred-insert-size read-info-map))))
+
+(defn count-proper-fragments-per-ref
+  "This makes some assumptions about how the mate flags work. It
+  assumes that if the proper-pair flag is true, then both the first
+  and the second mates will both me mapping to the SAME reference and
+  thus both be in the read-info-maps seq. So it increments only if the
+  read is the first in the pair. Also, it assumes that a proper-pair
+  flag means both pairs are in fact mapped. TODO: This should be
+  double checked with recruitment software docs."  
+  [read-info-maps]
+  (loop [read-info read-info-maps
+         counts {}
+         info {}]
+    (if-not (empty? (first read-info))
+      (let [read (first read-info)
+            reference (keyword (:ref read))]
+        (cond (and (contains? counts reference)
+                   (:mapped read)
+                   (:mate-mapped read)
+                   (:proper-pair read)
+                   (:first read))
+              (recur (rest read-info)
+                     (inc-counts reference counts)
+                     (assoc info reference
+                            (conj (reference info) read)))
+              (and (:mapped read)
+                   (:mate-mapped read)
+                   (:proper-pair read)
+                   (:first read))
+              (recur (rest read-info)
+                     (assoc counts reference 1)
+                     (assoc info reference [read]))
+              :else
+              (recur (rest read-info) counts info)))
+      (do
+        (doall
+         (map 
+          (fn [[ref info-maps]] 
+            (plots/plot-cov 
+             (map cov-vec info-maps)
+             (name ref)
+             (str "/Users/ryanmoore/projects/wommack/recruitment_info/"
+                  "test_files/test_output")
+             "mapped_proper_fragments")) 
+          info))
+        counts))))
 
 (defn avg-cov [avg-covs count-info-map]
   (into {} 
@@ -152,36 +210,7 @@
                      avg-covs)))
       (avg-cov avg-covs ref-lengths))))
 
-(defn count-proper-fragments-per-ref
-  "This makes some assumptions about how the mate flags work. It
-  assumes that if the proper-pair flag is true, then both the first
-  and the second mates will both me mapping to the SAME reference and
-  thus both be in the read-info-maps seq. So it increments only if the
-  read is the first in the pair. Also, it assumes that a proper-pair
-  flag means both pairs are in fact mapped. TODO: This should be
-  double checked with recruitment software docs."  
-  [read-info-maps]
-  (loop [read-info read-info-maps
-         counts {}]
-    (if-not (empty? (first read-info))
-      (let [read (first read-info)
-            ref (keyword (:ref read))]
-        (cond (and (contains? counts ref)
-                   (:mapped read)
-                   (:mate-mapped read)
-                   (:proper-pair read)
-                   (:first read))
-              (recur (rest read-info)
-                     (inc-counts ref counts))
-              (and (:mapped read)
-                   (:mate-mapped read)
-                   (:proper-pair read)
-                   (:first read))
-              (recur (rest read-info)
-                     (assoc counts ref 1))
-              :else
-              (recur (rest read-info) counts)))
-      counts)))
+
 
 (defn avg-proper-fragment-cov [read-info-maps ref-lengths]
   (loop [read-info-maps read-info-maps
@@ -194,13 +223,13 @@
                    (:first read))
               (recur (rest read-info-maps)
                      (assoc avg-covs ref 
-                            (+ (Math/abs (:inferred-insert-size read))
+                            (+ (:inferred-insert-size read)
                                (ref avg-covs))))
               (and (:inferred-insert-size read)
                    (:first read))
               (recur (rest read-info-maps)
                      (assoc avg-covs ref 
-                            (Math/abs (:inferred-insert-size read))))
+                            (:inferred-insert-size read)))
               :else
               (recur (rest read-info-maps)
                      avg-covs)))
