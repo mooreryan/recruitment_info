@@ -21,19 +21,44 @@
 
 (defn r [r-string]
   (let [{:keys [exit out err]} (apply sh ["Rscript" "-e" r-string])] 
-    (if (zero? exit) out err)))
+    (if (zero? exit) out (do (println err) (System/exit 3)))))
 
 (defn plot-cov
   "cov-vector is a vector like so [[2 3 4] [3 4 5 6] [5 6 7 8
   9]]. outdir will not have trailing '/'"
   [cov-vector ref-name ref-len outdir id]
-  (let [freqs (sort (frequencies (flatten cov-vector)))
+  (let [freqs (frequencies (flatten cov-vector))
+        xs (range 1 (inc ref-len))
+        ;; fill ys with zeros for areas of no coverage
+        ys (map (fn [x] (if (contains? freqs x) (freqs x) 0)) xs)
         [x y] (map #(format "c(%s)" %) 
-                   [(clojure.string/join ", " (keys freqs)) 
-                    (clojure.string/join ", " (vals freqs))])]
+                   [(clojure.string/join ", " xs) 
+                    (clojure.string/join ", " ys)])]
     (r (format (str (format "pdf('%s/%s_cov_%s.pdf', width=8, height=5);" 
                             outdir ref-name id)
                     "plot(x=%s, y=%s, main='%s %s', xlab='Position', ylab='Coverage', "
-                    "type='l', xlim=c(1,%s));"
+                    "type='l');"
                     "invisible(dev.off());") 
                x y ref-name id ref-len))))
+
+(defn cov-vec [read-info-map]
+  (range (:start read-info-map) (inc (:end read-info-map))))
+
+(defn frag-cov-vec [read-info-map]
+  (range (:start read-info-map) 
+         (+ (:start read-info-map)
+            (:inferred-insert-size read-info-map))))
+
+(defn plot-cov-for-info-map 
+  "INPUT: {:seq1 [{...read info maps...} {} {}]
+
+   type is either 'mapped_reads' or 'mapped_proper_fragments'"
+  [info-map ref-lengths outdir type]
+  (let [fun (if (= type "mapped_reads") cov-vec frag-cov-vec)]
+    (map (fn [[ref info-maps]] 
+           (plot-cov (map fun info-maps)
+                     (name ref)
+                     (ref ref-lengths)
+                     outdir
+                     type)) 
+         info-map)))

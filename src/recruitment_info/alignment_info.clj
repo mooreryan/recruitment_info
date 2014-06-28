@@ -84,13 +84,10 @@
 (defn inc-counts [reference counts]
   (assoc counts reference (inc (reference counts))))
 
-(defn cov-vec [read-info-map]
-  (range (:start read-info-map) (inc (:end read-info-map))))
-
 (defn count-mapped-reads-per-ref
   "Count the number of mapped reads per reference given a seq of
   read-info maps (ie the output from get-all-align-info)"
-  [read-info-maps ref-lengths]
+  [read-info-maps ref-lengths outdir]
   (loop [read-info read-info-maps
          counts {}
          info {}]
@@ -116,22 +113,11 @@
               (recur (rest read-info) counts info)))
       (do
         (doall 
-         (map 
-          (fn [[ref info-maps]] 
-            (plots/plot-cov 
-             (map cov-vec info-maps)
-             (name ref)
-             (ref ref-lengths)
-             (str "/Users/ryanmoore/projects/wommack/recruitment_info/"
-                  "test_files/test_output")
-             "mapped_reads")) 
-          info))
+         (plots/plot-cov-for-info-map info 
+                                      ref-lengths 
+                                      outdir
+                                      "mapped_reads"))
         counts))))
-
-(defn frag-cov-vec [read-info-map]
-  (range (:start read-info-map) 
-         (+ (:start read-info-map)
-            (:inferred-insert-size read-info-map))))
 
 (defn count-proper-fragments-per-ref
   "This makes some assumptions about how the mate flags work. It
@@ -141,7 +127,7 @@
   read is the first in the pair. Also, it assumes that a proper-pair
   flag means both pairs are in fact mapped. TODO: This should be
   double checked with recruitment software docs."  
-  [read-info-maps ref-lengths]
+  [read-info-maps ref-lengths outdir]
   (loop [read-info read-info-maps
          counts {}
          info {}]
@@ -168,16 +154,10 @@
               (recur (rest read-info) counts info)))
       (do
         (doall 
-         (map 
-          (fn [[ref info-maps]] 
-            (plots/plot-cov 
-             (map frag-cov-vec info-maps)
-             (name ref)
-             (ref ref-lengths)
-             (str "/Users/ryanmoore/projects/wommack/recruitment_info/"
-                  "test_files/test_output")
-             "mapped_proper_frags")) 
-          info))
+         (plots/plot-cov-for-info-map info 
+                                      ref-lengths 
+                                      outdir
+                                      "mapped_proper_fragments"))
         counts))))
 
 (defn avg-cov [avg-covs count-info-map]
@@ -244,11 +224,12 @@
    (= java.lang.Integer (class r)) r
    (nil? r) 0))
 
-(defn print-cov-info [read-info-maps ref-lengths]
+(defn print-cov-info [read-info-maps ref-lengths outdir]
   (let [references (keys ref-lengths)
-        all-reads (count-mapped-reads-per-ref read-info-maps ref-lengths)
+        all-reads (count-mapped-reads-per-ref read-info-maps ref-lengths outdir)
         all-read-cov (avg-mapped-read-cov read-info-maps ref-lengths)
-        proper-frags (count-proper-fragments-per-ref read-info-maps ref-lengths)
+        proper-frags (count-proper-fragments-per-ref read-info-maps ref-lengths
+                                                     outdir)
         proper-frag-cov (avg-proper-fragment-cov read-info-maps 
                                                  ref-lengths)]
     (for [refn references]
@@ -262,9 +243,9 @@
 
 (defn alignment-info 
   "Worker for this namespace."
-  [sorted-bam bam-index]
+  [sorted-bam bam-index outdir]
   (let [sam-reader (make-sam-reader (make-sam-reader-factory)
                                     sorted-bam bam-index)
         read-info-maps (get-all-align-info sam-reader)
         ref-lengths (get-reference-lengths sam-reader)]
-    (print-cov-info read-info-maps ref-lengths)))
+    (print-cov-info read-info-maps ref-lengths outdir)))

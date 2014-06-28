@@ -34,6 +34,8 @@
     :validate [exist? "The bam file doesn't exist!"]]
    ["-i" "--bam-index RECRUITMENT.bam.bai" "A BAM index file"
     :validate [exist? "The bam index doesn't exist!"]]
+   ["-o" "--outdir OUT_DIRECTORY" "Directory to put figures"
+    :validate [exist? "The directory index doesn't exist!"]]
    ;; A boolean option defaulting to nil
    ["-h" "--help"]])
 
@@ -46,7 +48,7 @@
          " and an index. Doesn't check if bam is sorted.")
     ""
     (str "USAGE: \njava -jar recruitment_info-x.y.z.jar "
-         "-b <bam-file> -i <index-file>")
+         "-b <bam-file> -i <index-file> -o <outdir>")
     ""
     "Options:"
     options-summary
@@ -66,7 +68,7 @@
     (cond
      (:help options) (exit 0 (usage summary))
      (empty? options) (exit 1 (usage summary))
-     (not= (count options) 2) (exit 1 (str (error-msg errors) 
+     (not= (count options) 3) (exit 1 (str (error-msg errors) 
                                            (usage summary)))
      errors (exit 1 (error-msg errors)))
     ;; run program with options
@@ -76,4 +78,6 @@
     (println
      (clojure.string/join 
       \newline 
-      (alignment-info (:sorted-bam options) (:bam-index options))))))
+      (alignment-info (:sorted-bam options) 
+                      (:bam-index options)
+                      (:outdir options))))))

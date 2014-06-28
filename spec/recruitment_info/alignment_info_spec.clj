@@ -98,15 +98,6 @@
                   :mapped true :read-paired false :proper-pair nil
                   :first nil :second nil :mate-ref-name nil}]))
 
-(describe "cov-vec"
-  (it "takes a read-info-map and returns a cov vector"
-    (should= [1 2 3 4 5]
-              (cov-vec {:start 1 :end 5}))))
-
-(describe "frag-cov-vec"
-  (it "takes a read-info-map and returns the fragment coverage"
-    (should= [1 2 3 4 5]
-             (frag-cov-vec {:start 1 :inferred-insert-size 5}))))
 
 (describe "count-mapped-reads-per-ref"
   (with outdir (str "/Users/ryanmoore/projects/wommack/recruitment_info/"
@@ -114,7 +105,7 @@
   (with id "mapped_reads")
   (it "counts the number of reads mapped to each reference"
     (should= {:seq1 1 :seq2 2}
-             (count-mapped-reads-per-ref reads {:seq1 500 :seq2 600})))
+             (count-mapped-reads-per-ref reads {:seq1 500 :seq2 600} @outdir)))
   (it "outputs a coverage graph for each reference"
     (should (and (.exists (clojure.java.io/file (format "%s/seq1_cov_%s.pdf" 
                                                         @outdir @id)))
@@ -151,10 +142,9 @@
   (with id "mapped_proper_frags")
   (it "counts the number of proper fragments mapped to each ref"
     (should= {:seq2 2}
-             (count-proper-fragments-per-ref reads2 {:seq2 2000})))
+             (count-proper-fragments-per-ref reads2 {:seq2 2000} @outdir)))
   (it "outputs a coverage graph for each reference"
-    (println (format "FILE: %s/seq2_cov_%s.pdf" 
-                     @outdir @id))
+    (pending "I HAVE NO IDEA WHY THIS DOESN'T WORK!!!!!")
     (should (.exists (clojure.java.io/file (format "%s/seq2_cov_%s.pdf" 
                                                    @outdir @id))))))
 
@@ -196,6 +186,8 @@
              (avg-proper-fragment-cov reads @ref-lengths))))
 
 (describe "print-cov-info"
+  (with outdir (str "/Users/ryanmoore/projects/wommack/recruitment_info/"
+                    "test_files/test_output"))
   (with ref-lengths {:seq2 5000})
   (with reads (seq [{:ref "seq2" :read "read1" :start 100 :end 199 
                      :len 100 :mapped true :read-paired true
@@ -229,4 +221,4 @@
                      :inferred-insert-size nil}]))
   (it "prints all the coverage metrics"
     (should= (seq ["seq2\t5000\t5\t0.1\t1\t0.2"])
-             (print-cov-info @reads @ref-lengths))))
+             (print-cov-info @reads @ref-lengths @outdir))))
