@@ -90,28 +90,28 @@
 (defn count-mapped-reads-per-ref
   "Count the number of mapped reads per reference given a seq of
   read-info maps (ie the output from get-all-align-info)"
-  [read-info-maps]
+  [read-info-maps ref-lengths]
   (loop [read-info read-info-maps
          counts {}
          info {}]
     (if-not (empty? (first read-info))
-      (let [read (:read (first read-info)) 
-            reference (keyword (:ref (first read-info)))]
+      (let [read (first read-info) 
+            reference (keyword (:ref read))]
         (cond (and (contains? counts reference) 
-                   (:mapped (first read-info)))
+                   (:mapped read))
               (recur (rest read-info) 
                      (inc-counts reference counts)
                      (assoc info reference 
-                            (conj (reference info) (first read-info))))
+                            (conj (reference info) read)))
               ;; ref in the map, read not mapped
               (contains? counts reference) 
               (recur (rest read-info) 
                      counts 
                      info)
-              (:mapped (first read-info))
+              (:mapped read)
               (recur (rest read-info) 
                      (assoc counts reference 1)
-                     (assoc info reference [(first read-info)]))
+                     (assoc info reference [read]))
               :else
               (recur (rest read-info) counts info)))
       (do
@@ -121,6 +121,7 @@
             (plots/plot-cov 
              (map cov-vec info-maps)
              (name ref)
+             (ref ref-lengths)
              (str "/Users/ryanmoore/projects/wommack/recruitment_info/"
                   "test_files/test_output")
              "mapped_reads")) 
@@ -140,7 +141,7 @@
   read is the first in the pair. Also, it assumes that a proper-pair
   flag means both pairs are in fact mapped. TODO: This should be
   double checked with recruitment software docs."  
-  [read-info-maps]
+  [read-info-maps ref-lengths]
   (loop [read-info read-info-maps
          counts {}
          info {}]
@@ -166,15 +167,16 @@
               :else
               (recur (rest read-info) counts info)))
       (do
-        (doall
+        (doall 
          (map 
           (fn [[ref info-maps]] 
             (plots/plot-cov 
-             (map cov-vec info-maps)
+             (map frag-cov-vec info-maps)
              (name ref)
+             (ref ref-lengths)
              (str "/Users/ryanmoore/projects/wommack/recruitment_info/"
                   "test_files/test_output")
-             "mapped_proper_fragments")) 
+             "mapped_proper_frags")) 
           info))
         counts))))
 
@@ -244,9 +246,9 @@
 
 (defn print-cov-info [read-info-maps ref-lengths]
   (let [references (keys ref-lengths)
-        all-reads (count-mapped-reads-per-ref read-info-maps)
+        all-reads (count-mapped-reads-per-ref read-info-maps ref-lengths)
         all-read-cov (avg-mapped-read-cov read-info-maps ref-lengths)
-        proper-frags (count-proper-fragments-per-ref read-info-maps)
+        proper-frags (count-proper-fragments-per-ref read-info-maps ref-lengths)
         proper-frag-cov (avg-proper-fragment-cov read-info-maps 
                                                  ref-lengths)]
     (for [refn references]

@@ -109,18 +109,24 @@
              (frag-cov-vec {:start 1 :inferred-insert-size 5}))))
 
 (describe "count-mapped-reads-per-ref"
+  (with outdir (str "/Users/ryanmoore/projects/wommack/recruitment_info/"
+                    "test_files/test_output"))
+  (with id "mapped_reads")
   (it "counts the number of reads mapped to each reference"
     (should= {:seq1 1 :seq2 2}
-             (count-mapped-reads-per-ref reads)))
+             (count-mapped-reads-per-ref reads {:seq1 500 :seq2 600})))
   (it "outputs a coverage graph for each reference"
-    (pending "write a test")))
+    (should (and (.exists (clojure.java.io/file (format "%s/seq1_cov_%s.pdf" 
+                                                        @outdir @id)))
+                 (.exists (clojure.java.io/file (format "%s/seq2_cov_%s.pdf" 
+                                                        @outdir @id)))))))
 
 ;; this is how i think things work with the various flags
 (def reads2 (seq [{:ref "seq2" :read "read1" :mapped true
                    :read-paired true :proper-pair true :first true
                    :second false :mate-mapped true
                    :inferred-insert-size 500
-                   :start 100}
+                   :start 100 :end 599}
                   {:ref "seq2" :read "read2" :mapped true
                    :read-paired true :proper-pair true :first false
                    :second true :mate-mapped true}
@@ -134,17 +140,23 @@
                    :read-paired true :proper-pair true :first true
                    :second false :mate-mapped true
                    :inferred-insert-size 600
-                   :start 400}
+                   :start 400 :end 999}
                   {:ref "seq2" :read "read6" :mapped true
                    :read-paired true :proper-pair true :first false
                    :second true :mate-mapped true}]))
 
 (describe "count-proper-fragments-per-ref"
+  (with outdir (str "/Users/ryanmoore/projects/wommack/recruitment_info/"
+                    "test_files/test_output"))
+  (with id "mapped_proper_frags")
   (it "counts the number of proper fragments mapped to each ref"
     (should= {:seq2 2}
-             (count-proper-fragments-per-ref reads2)))
+             (count-proper-fragments-per-ref reads2 {:seq2 2000})))
   (it "outputs a coverage graph for each reference"
-    (pending "write a test")))
+    (println (format "FILE: %s/seq2_cov_%s.pdf" 
+                     @outdir @id))
+    (should (.exists (clojure.java.io/file (format "%s/seq2_cov_%s.pdf" 
+                                                   @outdir @id))))))
 
 (describe "avg-mapped-read-cov"
   (with sam-reader (make-sam-reader (make-sam-reader-factory) 
@@ -190,7 +202,7 @@
                      :proper-pair true :first true :second false
                      :mate-mapped true :mate-ref-name "seq2"
                      :inferred-insert-size 1000}
-                    {:ref "seq2" :read "read2" :start 499 :end 598 
+                    {:ref "seq2" :read "read2" :start 1000 :end 1099 
                      :len 100 :mapped true :read-paired true
                      :proper-pair true :first false :second true
                      :mate-mapped true :mate-ref-name "seq2"

@@ -26,7 +26,7 @@
 (defn plot-cov
   "cov-vector is a vector like so [[2 3 4] [3 4 5 6] [5 6 7 8
   9]]. outdir will not have trailing '/'"
-  [cov-vector ref-name outdir id]
+  [cov-vector ref-name ref-len outdir id]
   (let [freqs (sort (frequencies (flatten cov-vector)))
         [x y] (map #(format "c(%s)" %) 
                    [(clojure.string/join ", " (keys freqs)) 
@@ -34,6 +34,6 @@
     (r (format (str (format "pdf('%s/%s_cov_%s.pdf', width=8, height=5);" 
                             outdir ref-name id)
                     "plot(x=%s, y=%s, main='%s %s', xlab='Position', ylab='Coverage', "
-                    "type='l');"
+                    "type='l', xlim=c(1,%s));"
                     "invisible(dev.off());") 
-               x y ref-name id))))
+               x y ref-name id ref-len))))

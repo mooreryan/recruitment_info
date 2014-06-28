@@ -37,10 +37,12 @@
   (with outdir (str "/Users/ryanmoore/projects/wommack/recruitment_info/"
                     "test_files/test_output"))
   (with reference "Contig45")
-  (with id "proper_frags_only")
+  (with ref-len 55)
+  (with id "mapped_proper_fragments")
   (it "saves a coverage plot in the given outdir with the reference name"
     (plot-cov [[1 2 3] [2 3 4] [3 4 5] [3 4 5] [10 11 12 13 14]]
               @reference
+              @ref-len
               @outdir
               @id)
     (should (.exists 
