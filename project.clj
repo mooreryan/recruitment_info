@@ -16,7 +16,7 @@
 ;; along with recruitment_info.  If not, see
 ;; <http://www.gnu.org/licenses/>.
 
-(defproject recruitment_info "0.0.2"
+(defproject recruitment_info "0.0.3"
   :description "Recruitment info from BAM files."
   :url "https://github.com/mooreryan/recruitment_info"
   :license {:name "GNU General Public License, GPLv3"
