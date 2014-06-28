@@ -23,23 +23,34 @@
   (let [{:keys [exit out err]} (apply sh ["Rscript" "-e" r-string])] 
     (if (zero? exit) out (do (println err) (System/exit 3)))))
 
+(defn r-script [fname]
+  (let [{:keys [exit out err]} (apply sh ["Rscript" fname])] 
+    (if (zero? exit) out (do (println err) (System/exit 3)))))
+
+
 (defn plot-cov
   "cov-vector is a vector like so [[2 3 4] [3 4 5 6] [5 6 7 8
-  9]]. outdir will not have trailing '/'"
+  9]]. TODO: Consider instead writing everything to one massive R
+  script and then calling this once instead of once for every graph we
+  need."
   [cov-vector ref-name ref-len outdir id]
-  (let [freqs (frequencies (flatten cov-vector))
+  (let [outd (clojure.string/replace outdir #"/$" "")
+        outf (format "%s/tmp.2394230498397.r" outd)
+        freqs (frequencies (flatten cov-vector))
         xs (range 1 (inc ref-len))
         ;; fill ys with zeros for areas of no coverage
         ys (map (fn [x] (if (contains? freqs x) (freqs x) 0)) xs)
         [x y] (map #(format "c(%s)" %) 
                    [(clojure.string/join ", " xs) 
                     (clojure.string/join ", " ys)])]
-    (r (format (str (format "pdf('%s/%s_cov_%s.pdf', width=8, height=5);" 
-                            outdir ref-name id)
+    (spit outf
+          (format (str (format "pdf('%s/%s_cov_%s.pdf', width=8, height=5);" 
+                            outd ref-name id ref-name id)
                     "plot(x=%s, y=%s, main='%s %s', xlab='Position', ylab='Coverage', "
                     "type='l');"
                     "invisible(dev.off());") 
-               x y ref-name id ref-len))))
+               x y ref-name id ref-len))
+    (r-script outf)))
 
 (defn cov-vec [read-info-map]
   (range (:start read-info-map) (inc (:end read-info-map))))
@@ -53,7 +64,7 @@
   "INPUT: {:seq1 [{...read info maps...} {} {}]
 
    type is either 'mapped_reads' or 'mapped_proper_fragments'"
-  [info-map ref-lengths outdir type]
+  [info ref-lengths outdir type]
   (let [fun (if (= type "mapped_reads") cov-vec frag-cov-vec)]
     (map (fn [[ref info-maps]] 
            (plot-cov (map fun info-maps)
@@ -61,4 +72,4 @@
                      (ref ref-lengths)
                      outdir
                      type)) 
-         info-map)))
+         info)))

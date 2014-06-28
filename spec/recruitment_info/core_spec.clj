@@ -28,7 +28,7 @@
 
 
 
-(describe "-main"
-  (context "with proper arguments"
-    (it "gets alignment info from a sorted bam and index"
-      (should-not (-main "-b" sorted-bam "-i" bam-index)))))
+#_(describe "-main"
+    (context "with proper arguments"
+      (it "gets alignment info from a sorted bam and index"
+        (should-not (-main "-b" sorted-bam "-i" bam-index)))))

@@ -144,9 +144,10 @@
     (should= {:seq2 2}
              (count-proper-fragments-per-ref reads2 {:seq2 2000} @outdir)))
   (it "outputs a coverage graph for each reference"
-    (pending "I HAVE NO IDEA WHY THIS DOESN'T WORK!!!!!")
-    (should (.exists (clojure.java.io/file (format "%s/seq2_cov_%s.pdf" 
-                                                   @outdir @id))))))
+    (should (.exists 
+             (clojure.java.io/file 
+              (format "%s/seq2_cov_mapped_proper_fragments.pdf" 
+                      @outdir))))))
 
 (describe "avg-mapped-read-cov"
   (with sam-reader (make-sam-reader (make-sam-reader-factory) 

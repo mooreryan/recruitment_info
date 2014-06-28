@@ -80,4 +80,10 @@
       \newline 
       (alignment-info (:sorted-bam options) 
                       (:bam-index options)
-                      (:outdir options))))))
+                      (:outdir options))))
+    ;; rm tmp r script file
+    (apply clojure.java.shell/sh 
+           ["rm" 
+            (format "%s/tmp.2394230498397.r" 
+                    (clojure.string/replace (:outdir options) #"/$" ""))]))
+  (System/exit 0))
