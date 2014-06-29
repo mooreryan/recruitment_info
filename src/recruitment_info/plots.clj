@@ -104,8 +104,9 @@
           (format (str (format "pdf('%s/%s_cov_%s.pdf', width=8, height=5)\n" 
                             outd ref-name id ref-name id)
                     "plot(x=%s, y=%s, main='%s %s', xlab='Position', ylab='Coverage', "
-                    "type='l', lwd=3, ylim=c(0, %s))\n"
-                    points
+                    "type='l', lwd=3, col='white', ylim=c(0, %s))\n"
+                    points "\n"
+                    (format "points(x=%s, y=%s, type='l', lwd=2, col='black')\n" x y)
                     "\ninvisible(dev.off())\n") 
                x y ref-name id (count cov-vector)))
     (r-script outf)))
