@@ -1,0 +1,1 @@
+The inferred insert size is really the fragments size. However, this cannot always be used for the as the number to count as the proper pair alignment length. You really need to go from the start of the leftmost read in the pair to the end of the rightmost read in the pair.
