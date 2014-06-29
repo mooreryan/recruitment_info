@@ -68,6 +68,8 @@
               :second (if paired (.getSecondOfPairFlag bam-record))
               :mate-mapped (if paired 
                              (not (.getMateUnmappedFlag bam-record)))
+              :mate-alignment-start (if paired
+                                      (.getMateAlignmentStart bam-record))
               :mate-ref-name (if paired 
                                (.getMateReferenceName bam-record))
               :inferred-insert-size ; might be zero
@@ -80,6 +82,25 @@
   [sam-reader]
   (let [iter (lazy-seq (iterator-seq (.iterator sam-reader)))]
     (map get-record-info iter)))
+
+#_(defn read-maps-to-map
+  "Takes the read maps from get-all-align info and puts them into a
+  map with key being the read name and value being the whole read
+  map. Will be used to quickly lookup a mate's pair for extending the
+  reads for proper pairs."
+  [read-maps]
+  (loop [read-maps read-maps new-map {}]
+    (if (seq (first read-maps))
+      (if (contains? new-map (:read (first read-maps)))
+        (do (println (format "Duplicate read: %s for reference: %s"
+                             (:read (first read-maps)) (:ref (first read-maps))))
+            (System/exit 4))
+        (recur (rest read-maps) (assoc new-map 
+                                  (keyword (clojure.string/replace 
+                                            (:read (first read-maps))
+                                            #" " "-")) 
+                                  (first read-maps))))
+      new-map)))
 
 (defn inc-counts [reference counts]
   (assoc counts reference (inc (reference counts))))
@@ -119,6 +140,27 @@
                                       "mapped_reads"))
         counts))))
 
+(defn is-this-read-lower?
+  "Checks to see if the given read or it's mate starts farther to the
+  left. Returns the start position if this read is farther left, nil
+  if the mate is farther left."
+  [read-map]
+  (if (< (- (:start read-map) (:mate-alignment-start read-map)) 0)
+    (:start read-map)))
+
+(defn extend-read
+  "Extends the read to one less than the mate-alignment-start. Input
+  is assumed to be correct."
+  [read-map]
+  (assoc read-map :end (dec (:mate-alignment-start read-map))))
+
+(defn extend-read-if-needed
+  "Combines the two previous functions into one."
+  [read-map]
+  (if (is-this-read-lower? read-map)
+    (extend-read read-map)
+    read-map))
+
 (defn count-proper-fragments-per-ref
   "This makes some assumptions about how the mate flags work. It
   assumes that if the proper-pair flag is true, then both the first
@@ -129,36 +171,55 @@
   double checked with recruitment software docs."  
   [read-info-maps ref-lengths outdir]
   (loop [read-info read-info-maps
-         counts {}
-         info {}]
-    (if-not (empty? (first read-info))
-      (let [read (first read-info)
-            reference (keyword (:ref read))]
-        (cond (and (contains? counts reference)
-                   (:mapped read)
-                   (:mate-mapped read)
-                   (:proper-pair read)
-                   (:first read))
-              (recur (rest read-info)
-                     (inc-counts reference counts)
-                     (assoc info reference
-                            (conj (reference info) read)))
-              (and (:mapped read)
-                   (:mate-mapped read)
-                   (:proper-pair read)
-                   (:first read))
-              (recur (rest read-info)
-                     (assoc counts reference 1)
-                     (assoc info reference [read]))
-              :else
-              (recur (rest read-info) counts info)))
-      (do
-        (doall 
-         (plots/plot-cov-for-info-map info 
-                                      ref-lengths 
-                                      outdir
-                                      "mapped_proper_fragments"))
-        counts))))
+           counts {}
+           info {}]
+      (if-not (empty? (first read-info))
+        (let [read (first read-info)
+              reference (keyword (:ref read))]
+          (cond (and (contains? counts reference)
+                     (:mapped read)
+                     (:mate-mapped read)
+                     (:proper-pair read)
+                     (:first read))
+                (recur (rest read-info)
+                       (inc-counts reference counts)
+                       ;; TODO: does counts having reference mean info has it to?
+                       (assoc info reference
+                              (conj (reference info) 
+                                    (extend-read-if-needed read))))
+                (and (:mapped read)
+                     (:mate-mapped read)
+                     (:proper-pair read)
+                     (:first read))
+                (recur (rest read-info)
+                       (assoc counts reference 1)
+                       (assoc info reference [(extend-read-if-needed read)]))
+                (and (contains? counts reference) 
+                     (:mapped read)
+                     (:mate-mapped read)
+                     (:proper-pair read)
+                     (:second read))
+                (recur (rest read-info)
+                       counts
+                       (assoc info reference
+                              (conj (reference info) 
+                                    (extend-read-if-needed read))))
+                (and (:mapped read)
+                     (:mate-mapped read)
+                     (:proper-pair read)
+                     (:second read))
+                (recur (rest read-info)
+                       counts
+                       (assoc info reference [(extend-read-if-needed read)]))
+                :else
+                (recur (rest read-info) counts info)))
+        (do
+          (doall 
+           (plots/plot-cov-for-info-map info 
+                                        ref-lengths 
+                                        outdir
+                                        "mapped_proper_fragments"))
+          counts))))
 
 (defn avg-cov [avg-covs count-info-map]
   (into {} 

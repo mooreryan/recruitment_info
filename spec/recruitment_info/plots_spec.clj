@@ -54,8 +54,3 @@
   (it "takes a read-info-map and returns a cov vector"
     (should= [1 2 3 4 5]
               (cov-vec {:start 1 :end 5}))))
-
-(describe "frag-cov-vec"
-  (it "takes a read-info-map and returns the fragment coverage"
-    (should= [1 2 3 4 5]
-             (frag-cov-vec {:start 1 :inferred-insert-size 5}))))

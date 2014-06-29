@@ -98,13 +98,13 @@
                     (clojure.string/join ", " ys)])
         xy-strings (get-xy-strings cov-vector)
         points (clojure.string/join "\n" 
-                                    (map #(format "points(%s, type='l', lwd=4, col='red')" %) 
+                                    (map #(format "points(%s, type='l', lwd=2, col='green')" %) 
                                          xy-strings))]
     (spit outf
           (format (str (format "pdf('%s/%s_cov_%s.pdf', width=8, height=5)\n" 
                             outd ref-name id ref-name id)
                     "plot(x=%s, y=%s, main='%s %s', xlab='Position', ylab='Coverage', "
-                    "type='l', ylim=c(0, %s))\n"
+                    "type='l', lwd=3, ylim=c(0, %s))\n"
                     points
                     "\ninvisible(dev.off())\n") 
                x y ref-name id (count cov-vector)))
@@ -113,21 +113,15 @@
 (defn cov-vec [read-info-map]
   (range (:start read-info-map) (inc (:end read-info-map))))
 
-(defn frag-cov-vec [read-info-map]
-  (range (:start read-info-map) 
-         (+ (:start read-info-map)
-            (:inferred-insert-size read-info-map))))
-
 (defn plot-cov-for-info-map 
   "INPUT: {:seq1 [{...read info maps...} {} {}]
 
    type is either 'mapped_reads' or 'mapped_proper_fragments'"
   [info ref-lengths outdir type]
-  (let [fun (if (= type "mapped_reads") cov-vec frag-cov-vec)]
-    (map (fn [[ref info-maps]] 
-           (plot-cov (map fun info-maps)
+  (map (fn [[ref info-maps]] 
+           (plot-cov (map cov-vec info-maps)
                      (name ref)
                      (ref ref-lengths)
                      outdir
                      type)) 
-         info)))
+         info))
