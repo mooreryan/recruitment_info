@@ -95,15 +95,23 @@
                                    (format "points(x=%s, y=%s, type='l', lwd=2, col='black')\n" x y)
                                    "invisible(dev.off())") 
                               x y ref-name id (count cov-vector))
-        cov-hist-str (str (format "\n\n#coverage histogram\npdf('%s/%s_cov_%s_hist.pdf', width=8, height=5)\n" 
+;        cov-hist-str #_
+        #_(str (format "\n\n#coverage histogram\npdf('%s/%s_cov_%s_hist.pdf', width=8, height=5)\n" 
+                     outd ref-name id ref-name id)
+             (format "plot(x=%s, y=%s, main='%s %s cov hist', xlab='Coverage', ylab='Num. bases with X coverage', pch=16)\n" 
+                     x-for-hist y-for-hist
+                     ref-name
+                     id)
+             "invisible(dev.off())\n")
+        cov-hist-string (str (format "\n\n#coverage histogram\npdf('%s/%s_cov_%s_hist.pdf', width=8, height=5)\n" 
                               outd ref-name id ref-name id)
-                      (format "plot(x=%s, y=%s, main='%s %s cov hist', xlab='Coverage', ylab='Num. bases with X coverage', pch=16)\n" 
-                              x-for-hist y-for-hist
+                      (format "hist(c(%s), main='%s %s cov hist', xlab='Coverage', ylab='Num. bases with X coverage', col='thistle')\n" 
+                              (clojure.string/join ", " (flatten cov-vector))
                               ref-name
                               id)
                       "invisible(dev.off())\n")]
     (spit outf cov-line-plot)
-    (spit outf cov-hist-str :append true)
+    (spit outf cov-hist-string :append true)
     (r-script outf)))
 
 (defn cov-vec [read-info-map]
