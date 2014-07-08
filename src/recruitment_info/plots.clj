@@ -85,7 +85,11 @@
   "cov-vector is a vector like so [[2 3 4] [3 4 5 6] [5 6 7 8
   9]]. TODO: Consider instead writing everything to one massive R
   script and then calling this once instead of once for every graph we
-  need. This version prints out reads, one per x value."
+  need. This version prints out reads, one per x value.
+
+  TODO: the labels for the histogram are off. Need to keep track of
+  what is actually there. Also, the proper fragment graph isn't
+  plotting."  
   [cov-vector ref-name ref-len outdir id]
   (let [outd (clojure.string/replace outdir #"/$" "")
         outf (format "%s/tmp.2394230498397.r" outd)
