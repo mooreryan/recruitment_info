@@ -96,19 +96,31 @@
         [x y] (map #(format "c(%s)" %) 
                    [(clojure.string/join ", " xs) 
                     (clojure.string/join ", " ys)])
+        cov-hist (map second (sort (frequencies y)))
+        labels (format "1:%s" (count cov-hist))
+        at (format "0.5:%s" (- (count cov-hist) 0.5))
         xy-strings (get-xy-strings cov-vector)
         points (clojure.string/join "\n" 
                                     (map #(format "points(%s, type='l', lwd=2, col='green')" %) 
-                                         xy-strings))]
-    (spit outf
-          (format (str (format "pdf('%s/%s_cov_%s.pdf', width=8, height=5)\n" 
-                            outd ref-name id ref-name id)
-                    "plot(x=%s, y=%s, main='%s %s', xlab='Position', ylab='Coverage', "
-                    "type='l', lwd=3, col='white', ylim=c(0, %s))\n"
-                    points "\n"
-                    (format "points(x=%s, y=%s, type='l', lwd=2, col='black')\n" x y)
-                    "\ninvisible(dev.off())\n") 
-               x y ref-name id (count cov-vector)))
+                                         xy-strings))
+        cov-line-plot (format (str (format "pdf('%s/%s_cov_%s.pdf', width=8, height=5)\n" 
+                                           outd ref-name id ref-name id)
+                                   "plot(x=%s, y=%s, main='%s %s', xlab='Position', ylab='Coverage', "
+                                   "type='l', lwd=3, col='white', ylim=c(0, %s))\n"
+                                   points "\n"
+                                   (format "points(x=%s, y=%s, type='l', lwd=2, col='black')\n" x y)
+                                   "invisible(dev.off())") 
+                              x y ref-name id (count cov-vector))
+        cov-hist-str (str (format "\n\n#coverage histogram\npdf('%s/%s_cov_%s_hist.pdf', width=8, height=5)\n" 
+                              outd ref-name id ref-name id)
+                      (format "barplot(c(%s), main='%s %s cov hist', xlab='Coverage', ylab='Num. bases with X coverage', col='thistle', space=0)\n" 
+                              (clojure.string/join ", " cov-hist)
+                              ref-name
+                              id)
+                      (format "axis(1, at=%s, labels=%s, pos=0)\n" at labels)
+                      "invisible(dev.off())\n")]
+    (spit outf cov-line-plot)
+    (spit outf cov-hist-str :append true)
     (r-script outf)))
 
 (defn cov-vec [read-info-map]
