@@ -120,11 +120,11 @@
                    :read-paired true :proper-pair true :first true
                    :second false :mate-mapped true
                    :inferred-insert-size 500
-                   :start 100 :end 599 ;; TODO to fix failing test add mate-alignment-start to each of these
-                   }
+                   :start 100 :end 599 :mate-alignment-start 800}
                   {:ref "seq2" :read "read2" :mapped true
                    :read-paired true :proper-pair true :first false
-                   :second true :mate-mapped true}
+                   :second true :mate-mapped true
+                   :mate-alignment-start 100 :start 500 :end 750}
                   {:ref "seq2" :read "read3" :mapped true
                    :read-paired true :proper-pair false :first true
                    :second false :mate-mapped true}
@@ -135,17 +135,19 @@
                    :read-paired true :proper-pair true :first true
                    :second false :mate-mapped true
                    :inferred-insert-size 600
-                   :start 400 :end 999}
+                   :start 400 :end 999
+                   :mate-alignment-start 1500}
                   {:ref "seq2" :read "read6" :mapped true
                    :read-paired true :proper-pair true :first false
-                   :second true :mate-mapped true}]))
+                   :second true :mate-mapped true
+                   :mate-alignment-start 400 :start 1500 :end 1750}]))
 
 (describe "count-proper-fragments-per-ref"
   (with outdir (str "/Users/ryanmoore/projects/wommack/recruitment_info/"
                     "test_files/test_output"))
   (with id "mapped_proper_frags")
   (it "counts the number of proper fragments mapped to each ref"
-    (pending)
+    
     (should= {:seq2 2}
              (count-proper-fragments-per-ref reads2 {:seq2 2000} @outdir)))
   (it "outputs a coverage graph for each reference"

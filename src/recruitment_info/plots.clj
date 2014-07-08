@@ -29,29 +29,6 @@
     (if (zero? exit) out (do (println err) (System/exit 3)))))
 
 
-#_(defn plot-cov
-  "cov-vector is a vector like so [[2 3 4] [3 4 5 6] [5 6 7 8
-  9]]. TODO: Consider instead writing everything to one massive R
-  script and then calling this once instead of once for every graph we
-  need."
-  [cov-vector ref-name ref-len outdir id]
-  (let [outd (clojure.string/replace outdir #"/$" "")
-        outf (format "%s/tmp.2394230498397.r" outd)
-        freqs (frequencies (flatten cov-vector))
-        xs (range 1 (inc ref-len))
-        ;; fill ys with zeros for areas of no coverage
-        ys (map (fn [x] (if (contains? freqs x) (freqs x) 0)) xs)
-        [x y] (map #(format "c(%s)" %) 
-                   [(clojure.string/join ", " xs) 
-                    (clojure.string/join ", " ys)])]
-    (spit outf
-          (format (str (format "pdf('%s/%s_cov_%s.pdf', width=8, height=5);" 
-                            outd ref-name id ref-name id)
-                    "plot(x=%s, y=%s, main='%s %s', xlab='Position', ylab='Coverage', "
-                    "type='l');"
-                    "invisible(dev.off());") 
-               x y ref-name id ref-len))
-    (r-script outf)))
 
 (defn get-xy-strings [cov-vecs]
   (loop [v cov-vecs c 0 strs []] 
@@ -100,9 +77,12 @@
         [x y] (map #(format "c(%s)" %) 
                    [(clojure.string/join ", " xs) 
                     (clojure.string/join ", " ys)])
-        cov-hist (map second (sort (frequencies y)))
-        labels (format "1:%s" (count cov-hist))
-        at (format "0.5:%s" (- (count cov-hist) 0.5))
+        freqs-for-hist (sort (frequencies ys))
+        xs-for-hist (map first freqs-for-hist)
+        ys-for-hist (map second freqs-for-hist)
+        [x-for-hist y-for-hist] (map #(format "c(%s)" %) 
+                                     [(clojure.string/join ", " xs-for-hist) 
+                                      (clojure.string/join ", " ys-for-hist)])
         xy-strings (get-xy-strings cov-vector)
         points (clojure.string/join "\n" 
                                     (map #(format "points(%s, type='l', lwd=2, col='green')" %) 
@@ -117,18 +97,18 @@
                               x y ref-name id (count cov-vector))
         cov-hist-str (str (format "\n\n#coverage histogram\npdf('%s/%s_cov_%s_hist.pdf', width=8, height=5)\n" 
                               outd ref-name id ref-name id)
-                      (format "barplot(c(%s), main='%s %s cov hist', xlab='Coverage', ylab='Num. bases with X coverage', col='thistle', space=0)\n" 
-                              (clojure.string/join ", " cov-hist)
+                      (format "plot(x=%s, y=%s, main='%s %s cov hist', xlab='Coverage', ylab='Num. bases with X coverage', pch=16)\n" 
+                              x-for-hist y-for-hist
                               ref-name
                               id)
-                      (format "axis(1, at=%s, labels=%s, pos=0)\n" at labels)
                       "invisible(dev.off())\n")]
     (spit outf cov-line-plot)
     (spit outf cov-hist-str :append true)
     (r-script outf)))
 
 (defn cov-vec [read-info-map]
-  (range (:start read-info-map) (inc (:end read-info-map))))
+  (try (range (:start read-info-map) (inc (:end read-info-map)))
+       (catch Exception e (println "bad read" read-info-map))))
 
 (defn plot-cov-for-info-map 
   "INPUT: {:seq1 [{...read info maps...} {} {}]
